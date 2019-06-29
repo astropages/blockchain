@@ -9,27 +9,27 @@ import (
 
 //Block 区块
 type Block struct {
-	Version    uint64 //版本号
-	PrevHash   []byte //前区块哈希值
-	MerKleRoot []byte //梅克尔根（交易的根哈希值）
-	TimeStamp  uint64 //时间戳
-	Bits       uint64 //调整比特币挖矿难度的数值（用于计算哈希）
-	Nonce      uint64 //随机数（挖矿时寻找的数值）
-	Hash       []byte //当前区块哈希值
-	Data       []byte //区块数据
+	Version      uint64         //版本号
+	PrevHash     []byte         //前区块哈希值
+	MerKleRoot   []byte         //梅克尔根（交易的根哈希值）
+	TimeStamp    uint64         //时间戳
+	Bits         uint64         //调整比特币挖矿难度的数值（用于计算哈希）
+	Nonce        uint64         //随机数（挖矿时寻找的数值）
+	Hash         []byte         //当前区块哈希值
+	Transactions []*Transaction //区块数据：区块的交易集合
 }
 
-//NewBlock 创建一个区块(传入数据和前区块的哈希)
-func NewBlock(data string, prevHash []byte) *Block {
+//NewBlock 创建一个区块(传入交易和前区块的哈希)
+func NewBlock(txs []*Transaction, prevHash []byte) *Block {
 	b := Block{
-		Version:    0,
-		PrevHash:   prevHash,
-		MerKleRoot: nil,
-		TimeStamp:  uint64(time.Now().UnixNano()),
-		Bits:       0,
-		Nonce:      0,
-		Hash:       nil,
-		Data:       []byte(data),
+		Version:      0,
+		PrevHash:     prevHash,
+		MerKleRoot:   nil,
+		TimeStamp:    uint64(time.Now().UnixNano()),
+		Bits:         0,
+		Nonce:        0,
+		Hash:         nil,
+		Transactions: txs,
 	}
 	//工作量证明(挖矿寻找随机数并计算符合难度目标的哈希值)
 	pow := NewProofOfWork(&b)

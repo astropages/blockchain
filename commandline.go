@@ -16,21 +16,40 @@ func (cli *CLI) createBlockChain() {
 	}
 }
 
-//添加区块
-func (cli *CLI) addBlock(data string) {
+// //添加区块
+// func (cli *CLI) addBlock(data string) {
+// 	//获取一个区块链实例
+// 	bc, err := GetBlockChainInstance()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+// 	defer bc.db.Close()
+// 	//添加区块
+// 	if err := bc.AddBlock(data); err != nil {
+// 		fmt.Println(err)
+// 		return
+// 	}
+
+// }
+
+//获取地址对应的金额
+func (cli *CLI) getBalance(address string) {
 	//获取一个区块链实例
 	bc, err := GetBlockChainInstance()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer bc.db.Close()
-	//添加区块
-	if err := bc.AddBlock(data); err != nil {
-		fmt.Println(err)
-		return
+	//获取地址的utxo
+	utxos := bc.FindMyUTXO(address)
+	//遍历累加金额
+	total := 0.0
+	for _, utxo := range utxos {
+		total += utxo.Value
 	}
 
+	fmt.Printf("%s的金额为: %f\n", address, total)
 }
 
 //打印区块链
@@ -56,7 +75,7 @@ func (cli *CLI) printBlockChain() {
 		fmt.Printf("Bits: %d\n", block.Bits)
 		fmt.Printf("Nonce: %d\n", block.Nonce)
 		fmt.Printf("Hash: %x\n", block.Hash)
-		fmt.Printf("Data: %s\n", block.Data)
+		fmt.Printf("Data: %s\n", block.Transactions[0].TXInputs[0].ScriptSign)
 
 		//校验区块（工作量验证）
 		pow := NewProofOfWork(block)

@@ -14,6 +14,7 @@ const Usage = `
 Usage:
 	create "创建区块链"
 	add <data> "添加区块"
+	getbalance <address> "获取地址对应的金额"
 	print "打印区块链" 
 `
 
@@ -39,11 +40,19 @@ func (cli *CLI) Run() {
 			fmt.Println("请输入区块数据")
 			return
 		}
-		data := cmds[2]
-		cli.addBlock(data)
+		// data := cmds[2]
+		// cli.addBlock(data)
 	case "print":
 		fmt.Println("打印区块链")
 		cli.printBlockChain()
+	case "getbalance":
+		fmt.Println("获取地址对应的金额")
+		if len(cmds) < 3 {
+			fmt.Println("请输入地址")
+			return
+		}
+		address := cmds[2]
+		cli.getBalance(address)
 	default:
 		fmt.Println("输入参数错误")
 	}

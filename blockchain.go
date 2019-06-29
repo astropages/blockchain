@@ -48,8 +48,12 @@ func CreateBlockChain() error {
 			if err != nil {
 				return err
 			}
+			//创建挖矿交易
+			coinbase := NewCoinbaseTX("中本聪", genesisInfo)
+			//拼装交易集合txs
+			txs := []*Transaction{coinbase}
 			//新建创世快
-			genesisBlock := NewBlock(genesisInfo, nil)
+			genesisBlock := NewBlock(txs, nil)
 			//将区块数据流写入数据库（key为区块的哈希，value为区块的数据流）
 			bucket.Put(genesisBlock.Hash, genesisBlock.Serialize())
 			//将最后一个区块的哈希写入数据库（key为lastBlockHash,value为创世块的哈希）
@@ -94,14 +98,14 @@ func GetBlockChainInstance() (*BlockChain, error) {
 	return &bc, nil
 }
 
-//AddBlock 向区块链中添加区块的方法（传入数据）
-func (bc *BlockChain) AddBlock(data string) error {
+//AddBlock 向区块链中添加区块的方法（传入数据：交易集合）
+func (bc *BlockChain) AddBlock(txs []*Transaction) error {
 
 	//获取最后一个区块的哈希
 	lastBlockHash := bc.tail
 
 	//创建一个新区块
-	newBlock := NewBlock(data, lastBlockHash)
+	newBlock := NewBlock(txs, lastBlockHash)
 
 	//写入数据库
 	err := bc.db.Update(func(tx *bolt.Tx) error {
@@ -163,6 +167,60 @@ func (it *Iterator) Next() (block *Block) {
 		return nil
 	}
 	return
+}
+
+//FindMyUTXO 获取指定地址的金额：遍历账本
+func (bc *BlockChain) FindMyUTXO(address string) []TXOutput {
+	var utxos []TXOutput                    //交易输出集合
+	var spentUtxos = make(map[string][]int) //定义一个存放已消耗交易输出集合的集合
+
+	it := bc.NewIterator() //定义迭代器
+
+	for {
+		//遍历区块
+		block := it.Next()
+		//遍历交易
+		for _, tx := range block.Transactions {
+		LABEL:
+			//遍历outputs，判断其锁定脚本是否为目标地址
+			for outputIndex, output := range tx.TXOutputs {
+				if output.ScriptPubKey == address {
+					//过滤
+					currentTXID := string(tx.TXID)
+					//在集合中查找集合
+					indexArray := spentUtxos[currentTXID]
+					//判断该交易ID是否有数据，有则代表已被某个output使用
+					if len(indexArray) != 0 {
+						for _, spendIndex := range indexArray {
+							//判断下标
+							if outputIndex == spendIndex {
+								continue LABEL
+							}
+						}
+
+					}
+					//找到属于目标地址的output
+					utxos = append(utxos, output)
+				}
+			}
+
+			//遍历inputs
+			for _, input := range tx.TXInputs {
+				if input.ScriptSign == address {
+					//key交易ID，value为交易输出索引的集合
+					spentKey := string(input.TXID)
+					//向集合中添加已消耗交易输出的集合
+					spentUtxos[spentKey] = append(spentUtxos[spentKey], int(input.Index))
+				}
+			}
+		}
+		//退出条件
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
+	return utxos
+
 }
 
 /*

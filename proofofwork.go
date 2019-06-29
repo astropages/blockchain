@@ -68,12 +68,12 @@ func (pow *ProofOfWork) PrepareData(nonce uint64) []byte {
 	tmp := [][]byte{
 		UintToByteSlice(b.Version),
 		b.PrevHash,
-		b.MerKleRoot,
+		b.MerKleRoot, //由所有交易数据计算的哈希值
 		UintToByteSlice(b.TimeStamp),
 		UintToByteSlice(b.Bits),
 		UintToByteSlice(nonce), //随机数
 		// b.Hash, //计算后才进行赋值，因此不能参与哈希计算
-		b.Data,
+
 	}
 	//将二维切片使用空切片进行拼接，得到一个切片
 	data := bytes.Join(tmp, []byte{})
