@@ -84,7 +84,7 @@ func GetBlockChainInstance() (*BlockChain, error) {
 	var lastHash []byte
 
 	//打开数据库
-	db, err := bolt.Open(blockChainDBFile, 0400, nil) //只有读权限
+	db, err := bolt.Open(blockChainDBFile, 0600, nil)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err

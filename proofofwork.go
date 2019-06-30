@@ -68,7 +68,7 @@ func (pow *ProofOfWork) PrepareData(nonce uint64) []byte {
 	tmp := [][]byte{
 		UintToByteSlice(b.Version),
 		b.PrevHash,
-		b.MerKleRoot, //由所有交易数据计算的哈希值
+		b.MerkleRoot, //由所有交易数据计算的哈希值
 		UintToByteSlice(b.TimeStamp),
 		UintToByteSlice(b.Bits),
 		UintToByteSlice(nonce), //随机数

@@ -53,7 +53,7 @@ func (cli *CLI) printBlockChain() {
 		fmt.Println("===============================")
 		fmt.Printf("Version: %d\n", block.Version)
 		fmt.Printf("PrevHash: %x\n", block.PrevHash)
-		fmt.Printf("MerKleRoot: %x\n", block.MerKleRoot)
+		fmt.Printf("MerkleRoot: %x\n", block.MerkleRoot)
 		fmt.Printf("TimeStamp: %d\n", block.TimeStamp)
 		fmt.Printf("Bits: %d\n", block.Bits)
 		fmt.Printf("Nonce: %d\n", block.Nonce)
