@@ -103,3 +103,14 @@ func (cli *CLI) send(from string, to string, amount float64, miner string, data 
 	}
 	fmt.Println("转账成功")
 }
+
+//创建钱包
+func (cli *CLI) createWallet() {
+	wm := NewWalletManager()
+	address := wm.createWallet()
+	if len(address) == 0 {
+		fmt.Println("创建钱包失败")
+		return
+	}
+	fmt.Println("创建钱包成功:", address)
+}

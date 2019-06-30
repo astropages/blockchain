@@ -17,6 +17,7 @@ Usage:
 	getbalance <address> "获取地址对应的金额"
 	print "打印区块链" 
 	send <from> <to> <amount> <miner> <data> "转账：付款人 收款人 转账金额 矿工 数据"
+	createwallet "创建钱包"
 `
 
 //Run 解析用户输入命令的方法
@@ -58,7 +59,9 @@ func (cli *CLI) Run() {
 		miner := cmds[5]
 		data := cmds[6]
 		cli.send(from, to, amount, miner, data)
-
+	case "createwallet":
+		fmt.Println("创建钱包")
+		cli.createWallet()
 	default:
 		fmt.Println("输入参数错误")
 	}
