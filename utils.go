@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"os"
 )
 
 //UintToByteSlice Uint64转换为[]byte
@@ -18,4 +19,15 @@ func UintToByteSlice(num uint64) []byte {
 	}
 	//返回字节切片
 	return buffer.Bytes()
+}
+
+//IsFileExist 判断文件是否存在
+func IsFileExist(filename string) bool {
+	//获取文件状态
+	_, err := os.Stat(filename)
+	//判断文件是否存在
+	if os.IsNotExist(err) {
+		return false
+	}
+	return true
 }

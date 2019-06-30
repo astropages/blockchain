@@ -16,23 +16,6 @@ func (cli *CLI) createBlockChain() {
 	}
 }
 
-// //添加区块
-// func (cli *CLI) addBlock(data string) {
-// 	//获取一个区块链实例
-// 	bc, err := GetBlockChainInstance()
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return
-// 	}
-// 	defer bc.db.Close()
-// 	//添加区块
-// 	if err := bc.AddBlock(data); err != nil {
-// 		fmt.Println(err)
-// 		return
-// 	}
-
-// }
-
 //获取地址对应的金额
 func (cli *CLI) getBalance(address string) {
 	//获取一个区块链实例
@@ -88,7 +71,7 @@ func (cli *CLI) printBlockChain() {
 	}
 }
 
-//转账：每次send时都会添加一个区块
+//转账：每次转账时便添加一个区块
 func (cli *CLI) send(from string, to string, amount float64, miner string, data string) {
 	//获取一个区块链实例
 	bc, err := GetBlockChainInstance()
@@ -112,7 +95,7 @@ func (cli *CLI) send(from string, to string, amount float64, miner string, data 
 		fmt.Println("未找到有效交易")
 	}
 
-	//创建区块
+	//添加区块
 	err = bc.AddBlock(txs)
 	if err != nil {
 		fmt.Println("转账失败")

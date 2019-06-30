@@ -14,7 +14,6 @@ type CLI struct {
 const Usage = `
 Usage:
 	create "创建区块链"
-	add <data> "添加区块"
 	getbalance <address> "获取地址对应的金额"
 	print "打印区块链" 
 	send <from> <to> <amount> <miner> <data> "转账：付款人 收款人 转账金额 矿工 数据"
@@ -36,19 +35,11 @@ func (cli *CLI) Run() {
 	case "create":
 		fmt.Println("创建区块链")
 		cli.createBlockChain()
-	case "add":
-		fmt.Println("添加区块")
-		if len(cmds) < 3 {
-			fmt.Println("请输入区块数据")
-			return
-		}
-		// data := cmds[2]
-		// cli.addBlock(data)
 	case "print":
 		fmt.Println("打印区块链")
 		cli.printBlockChain()
 	case "getbalance":
-		fmt.Println("获取地址对应的金额")
+		fmt.Println("获取地址金额")
 		if len(cmds) < 3 {
 			fmt.Println("请输入地址")
 			return

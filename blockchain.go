@@ -29,6 +29,11 @@ const lastBlockHashKey = "lastBlockHashKey"
 //CreateBlockChain 创建区块链（同时添加创世块）
 func CreateBlockChain() error {
 
+	//判断区块链是否存在
+	if IsFileExist(blockChainDBFile) {
+		return errors.New("区块链文件已存在")
+	}
+
 	//打开数据库，没有则创建
 	db, err := bolt.Open(blockChainDBFile, 0600, nil)
 	if err != nil {
@@ -70,6 +75,11 @@ func CreateBlockChain() error {
 
 //GetBlockChainInstance 获取区块链实例
 func GetBlockChainInstance() (*BlockChain, error) {
+	//判断区块链是否存在
+	if !IsFileExist(blockChainDBFile) {
+		return nil, errors.New("区块链文件不存在")
+	}
+
 	//内存中的最后一个区块的哈希值
 	var lastHash []byte
 
