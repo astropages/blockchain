@@ -107,10 +107,27 @@ func (cli *CLI) send(from string, to string, amount float64, miner string, data 
 //创建钱包
 func (cli *CLI) createWallet() {
 	wm := NewWalletManager()
+	if wm == nil {
+		fmt.Println("打开钱包失败")
+		return
+	}
 	address := wm.createWallet()
 	if len(address) == 0 {
 		fmt.Println("创建钱包失败")
 		return
 	}
 	fmt.Println("创建钱包成功:", address)
+}
+
+//打印全部钱包地址
+func (cli *CLI) listAddresses() {
+	wm := NewWalletManager()
+	if wm == nil {
+		fmt.Println("打开钱包失败")
+		return
+	}
+	addresses := wm.listAddresses()
+	for _, address := range addresses {
+		fmt.Println(address)
+	}
 }

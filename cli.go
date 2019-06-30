@@ -18,6 +18,7 @@ Usage:
 	print "打印区块链" 
 	send <from> <to> <amount> <miner> <data> "转账：付款人 收款人 转账金额 矿工 数据"
 	createwallet "创建钱包"
+	listaddress "获取所有钱包地址"
 `
 
 //Run 解析用户输入命令的方法
@@ -62,6 +63,10 @@ func (cli *CLI) Run() {
 	case "createwallet":
 		fmt.Println("创建钱包")
 		cli.createWallet()
+
+	case "listaddress":
+		fmt.Println("所有钱包地址")
+		cli.listAddresses()
 	default:
 		fmt.Println("输入参数错误")
 	}
