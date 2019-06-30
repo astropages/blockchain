@@ -48,11 +48,11 @@ type Transaction struct {
 //TXInput 交易输入：指明交易发起人可支付资金的来源
 type TXInput struct {
 	TXID       []byte //引用output所在交易的ID
-	Index      int64  //引用output在output中的索引值
+	Index      int64  //引用output在output集合中的索引值
 	ScriptSign string //锁定脚本：付款人对当前新交易的签名
 }
 
-//TXOutput 交易输出：包含资金接收方的相关信息
+//TXOutput 交易输出：包含资金接收方的相关信息，作为下一个交易的输入
 type TXOutput struct {
 	Value        float64 //转账金额
 	ScriptPubKey string  //锁定脚本：收款人的公钥哈希（地址）
@@ -88,6 +88,51 @@ func NewCoinbaseTX(miner /*矿工*/ string, data string) *Transaction {
 		TXOutputs: []TXOutput{output},
 		TimeStamp: uint64(timStamp),
 	}
+	tx.setHash()
+	return &tx
+}
+
+//NewTransaction 创建普通交易
+//from - 付款人，to - 收款人， amount - 转账金额
+func NewTransaction(from string, to string, amount float64, bc *BlockChain) *Transaction {
+	//遍历账本，找到满足条件的utxo集合，返回utxo集合的总金额
+	var spentUTXO = make(map[string][]int64) //将要使用的uxto集合
+	var retValue float64                     //utxo的总金额
+
+	//遍历账本，找到from能使用的utxo集合及包含的所有金额
+	spentUTXO, retValue = bc.findNeedUTXO(from, amount)
+	//金额不足
+	if retValue < amount {
+		fmt.Println("金额不足，创建交易失败")
+		return nil
+	}
+
+	var inputs []TXInput
+	var outputs []TXOutput
+	//拼接inputs
+	//遍历utxo集合，把每个putput转为input
+	for txid, indexArray := range spentUTXO {
+		//遍历获取output的下标值
+		for _, i := range indexArray {
+			input := TXInput{[]byte(txid), i, from}
+			inputs = append(inputs, input)
+		}
+
+	}
+
+	//拼接outputs
+	//创建一个属于to的output
+	output1 := TXOutput{amount, to}
+	outputs = append(outputs, output1)
+	if retValue > amount {
+		//如果总金额大于转账金额，找零：给from创建一个output
+		output2 := TXOutput{retValue - amount, from}
+		outputs = append(outputs, output2)
+	}
+
+	timeStamp := time.Now().Unix()
+	//计算哈希值，返回
+	tx := Transaction{nil, inputs, outputs, uint64(timeStamp)}
 	tx.setHash()
 	return &tx
 }

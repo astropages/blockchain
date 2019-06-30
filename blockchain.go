@@ -169,9 +169,16 @@ func (it *Iterator) Next() (block *Block) {
 	return
 }
 
+//UTXOInfo UTXO详情
+type UTXOInfo struct {
+	TXID     []byte //交易ID
+	Index    int64  //索引值
+	TXOutput        //继承自output
+}
+
 //FindMyUTXO 获取指定地址的金额：遍历账本
-func (bc *BlockChain) FindMyUTXO(address string) []TXOutput {
-	var utxos []TXOutput                    //交易输出集合
+func (bc *BlockChain) FindMyUTXO(address string) []UTXOInfo {
+	var utxoInfos []UTXOInfo                //UTXO集合
 	var spentUtxos = make(map[string][]int) //定义一个存放已消耗交易输出集合的集合
 
 	it := bc.NewIterator() //定义迭代器
@@ -199,8 +206,9 @@ func (bc *BlockChain) FindMyUTXO(address string) []TXOutput {
 						}
 
 					}
-					//找到属于目标地址的output
-					utxos = append(utxos, output)
+					//找到属于目标地址的utxo详情
+					utxoInfo := UTXOInfo{tx.TXID, int64(outputIndex), output}
+					utxoInfos = append(utxoInfos, utxoInfo)
 				}
 			}
 
@@ -219,8 +227,30 @@ func (bc *BlockChain) FindMyUTXO(address string) []TXOutput {
 			break
 		}
 	}
-	return utxos
+	return utxoInfos
 
+}
+
+//遍历账本（转账人地址，转账金额）找到from能使用的utxo集合及包含的所有金额
+func (bc *BlockChain) findNeedUTXO(from string, amount float64) (map[string][]int64, float64) {
+	var retMap = make(map[string][]int64)
+	var retValue float64
+
+	//遍历账本，找到所有utxo集合
+	utxoInfos := bc.FindMyUTXO(from)
+	//遍历utxo,统计总金额
+	for _, utxoInfo := range utxoInfos {
+		retValue += utxoInfo.Value                        //utxo总额
+		key := string(utxoInfo.TXID)                      //
+		retMap[key] = append(retMap[key], utxoInfo.Index) //将要使用的utxo集合
+		//如果总金额大于转账金额，直接返回
+		if retValue >= amount {
+			break
+		}
+		//否则继续遍历
+	}
+
+	return retMap, retValue
 }
 
 /*

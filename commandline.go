@@ -41,12 +41,12 @@ func (cli *CLI) getBalance(address string) {
 		fmt.Println(err)
 		return
 	}
-	//获取地址的utxo
-	utxos := bc.FindMyUTXO(address)
+	//获取地址的utxo详情
+	utxoInfos := bc.FindMyUTXO(address)
 	//遍历累加金额
 	total := 0.0
-	for _, utxo := range utxos {
-		total += utxo.Value
+	for _, utxo := range utxoInfos {
+		total += utxo.TXOutput.Value
 	}
 
 	fmt.Printf("%s的金额为: %f\n", address, total)
