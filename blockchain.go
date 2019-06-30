@@ -223,6 +223,10 @@ func (bc *BlockChain) FindMyUTXO(address string) []UTXOInfo {
 			}
 
 			//遍历inputs
+			if tx.isCoinBaseTX() { //判断是否为挖矿交易
+				continue //跳过循环，不遍历inputs
+			}
+			//遍历非挖矿交易inputs
 			for _, input := range tx.TXInputs {
 				if input.ScriptSign == address {
 					//key交易ID，value为交易输出索引的集合
@@ -231,6 +235,7 @@ func (bc *BlockChain) FindMyUTXO(address string) []UTXOInfo {
 					spentUtxos[spentKey] = append(spentUtxos[spentKey], int(input.Index))
 				}
 			}
+
 		}
 		//退出条件
 		if len(block.PrevHash) == 0 {

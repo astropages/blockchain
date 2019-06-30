@@ -136,3 +136,13 @@ func NewTransaction(from string, to string, amount float64, bc *BlockChain) *Tra
 	tx.setHash()
 	return &tx
 }
+
+//判断交易是否为挖矿交易
+func (tx *Transaction) isCoinBaseTX() bool {
+	inputs := tx.TXInputs
+	//挖矿交易：input个数为1,ID为nil,索引为-1
+	if len(inputs) == 1 && inputs[0].TXID == nil && inputs[0].Index == -1 {
+		return true
+	}
+	return false
+}
