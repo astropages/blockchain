@@ -87,3 +87,36 @@ func (cli *CLI) printBlockChain() {
 		}
 	}
 }
+
+//转账：每次send时都会添加一个区块
+func (cli *CLI) send(from string, to string, amount float64, miner string, data string) {
+	//获取一个区块链实例
+	bc, err := GetBlockChainInstance()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer bc.db.Close()
+
+	//创建挖矿交易
+	coinbaseTX := NewCoinbaseTX(miner, data)
+
+	//创建交易集合，添加有效交易
+	txs := []*Transaction{coinbaseTX}
+
+	//创建普通交易
+	tx := NewTransaction(from, to, amount, bc)
+	if tx != nil { //找到有效交易
+		txs = append(txs, tx)
+	} else {
+		fmt.Println("未找到有效交易")
+	}
+
+	//创建区块
+	err = bc.AddBlock(txs)
+	if err != nil {
+		fmt.Println("转账失败")
+		return
+	}
+	fmt.Println("转账成功")
+}

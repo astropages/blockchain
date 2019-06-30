@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 //CLI 命令行(Command Line)
@@ -16,6 +17,7 @@ Usage:
 	add <data> "添加区块"
 	getbalance <address> "获取地址对应的金额"
 	print "打印区块链" 
+	send <from> <to> <amount> <miner> <data> "转账：付款人 收款人 转账金额 矿工 数据"
 `
 
 //Run 解析用户输入命令的方法
@@ -53,6 +55,19 @@ func (cli *CLI) Run() {
 		}
 		address := cmds[2]
 		cli.getBalance(address)
+	case "send":
+		fmt.Println("转账")
+		if len(cmds) < 7 {
+			fmt.Println("转账参数错误")
+			return
+		}
+		from := cmds[2]
+		to := cmds[3]
+		amount, _ := strconv.ParseFloat(cmds[4], 64)
+		miner := cmds[5]
+		data := cmds[6]
+		cli.send(from, to, amount, miner, data)
+
 	default:
 		fmt.Println("输入参数错误")
 	}
