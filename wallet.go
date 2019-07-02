@@ -112,6 +112,7 @@ func IsValidAddress(address string) bool {
 	payload := deInfo[:len(deInfo)-4]
 	//截取后4字节的checksum1
 	checksum1 := deInfo[len(deInfo)-4:]
+
 	//计算payload, 获得checksum2
 	checksum2 := CheckSum(payload)
 	//对比checksum1和checksum2
