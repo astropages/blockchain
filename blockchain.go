@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
@@ -27,7 +28,7 @@ const blockBucket = "blockBucket"
 const lastBlockHashKey = "lastBlockHashKey"
 
 //CreateBlockChain 创建区块链（同时添加创世块）
-func CreateBlockChain() error {
+func CreateBlockChain(address string) error {
 
 	//判断区块链是否存在
 	if IsFileExist(blockChainDBFile) {
@@ -54,7 +55,7 @@ func CreateBlockChain() error {
 				return err
 			}
 			//创建挖矿交易
-			coinbase := NewCoinbaseTX("中本聪", genesisInfo)
+			coinbase := NewCoinbaseTX(address, genesisInfo)
 			//拼装交易集合txs
 			txs := []*Transaction{coinbase}
 			//新建创世快
@@ -187,7 +188,7 @@ type UTXOInfo struct {
 }
 
 //FindMyUTXO 获取指定地址的金额：遍历账本
-func (bc *BlockChain) FindMyUTXO(address string) []UTXOInfo {
+func (bc *BlockChain) FindMyUTXO(pubKeyHash []byte) []UTXOInfo {
 	var utxoInfos []UTXOInfo                //UTXO集合
 	var spentUtxos = make(map[string][]int) //定义一个存放已消耗交易输出集合的集合
 
@@ -201,7 +202,8 @@ func (bc *BlockChain) FindMyUTXO(address string) []UTXOInfo {
 		LABEL:
 			//遍历outputs，判断其锁定脚本是否为目标地址
 			for outputIndex, output := range tx.TXOutputs {
-				if output.ScriptPubKey == address {
+				//判断与付款人有关的UTXO
+				if bytes.Equal(output.ScriptPubKeyHash, pubKeyHash) { //对比两个哈希是否相同
 					//过滤
 					currentTXID := string(tx.TXID)
 					//在集合中查找集合
@@ -228,7 +230,8 @@ func (bc *BlockChain) FindMyUTXO(address string) []UTXOInfo {
 			}
 			//遍历非挖矿交易inputs
 			for _, input := range tx.TXInputs {
-				if input.ScriptSign == address {
+				//判断付款人的公钥哈希
+				if bytes.Equal(GetPubKeyHashFromPublicKey(input.PubKey), pubKeyHash) { //对比两个公钥哈希是否相等
 					//key交易ID，value为交易输出索引的集合
 					spentKey := string(input.TXID)
 					//向集合中添加已消耗交易输出的集合
@@ -247,12 +250,12 @@ func (bc *BlockChain) FindMyUTXO(address string) []UTXOInfo {
 }
 
 //遍历账本（转账人地址，转账金额）找到from能使用的utxo集合及包含的所有金额
-func (bc *BlockChain) findNeedUTXO(from string, amount float64) (map[string][]int64, float64) {
+func (bc *BlockChain) findNeedUTXO(pubKeyHash []byte, amount float64) (map[string][]int64, float64) {
 	var retMap = make(map[string][]int64)
 	var retValue float64
 
 	//遍历账本，找到所有utxo集合
-	utxoInfos := bc.FindMyUTXO(from)
+	utxoInfos := bc.FindMyUTXO(pubKeyHash)
 	//遍历utxo,统计总金额
 	for _, utxoInfo := range utxoInfos {
 		retValue += utxoInfo.Value                        //utxo总额

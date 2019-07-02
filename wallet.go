@@ -42,28 +42,59 @@ func NewWalletKeyPair() *Wallet {
 
 //根据私钥生成地址
 func (w *Wallet) getAddress() string {
-	//公钥
-	pubKey := w.PublicKey
-	hash1 := sha256.Sum256(pubKey)
 
-	//哈希160处理
-	hasher := ripemd160.New()
-	hasher.Write(hash1[:])
-	//计算出公钥哈希（锁定output）
-	pubKeyHash := hasher.Sum(nil)
+	//获得公钥哈希
+	pubKeyHash := GetPubKeyHashFromPublicKey(w.PublicKey)
 
 	//拼接version和公钥哈希，得到21字节的数据
 	payload := append([]byte{byte(0x00)}, pubKeyHash...)
 
 	//生成4个字节的校验码
-	frist := sha256.Sum256(payload)
-	second := sha256.Sum256(frist[:])
-	//4字节校验码
-	checksum := second[0:4]
+	checksum := CheckSum(payload)
 	//25字节数据
 	payload = append(payload, checksum...)
 	//地址
 	address := base58.Encode(payload)
 
 	return address
+}
+
+//GetPubKeyHashFromPublicKey 通过公钥计算公钥哈希
+func GetPubKeyHashFromPublicKey(publickey []byte) []byte {
+
+	hash := sha256.Sum256(publickey)
+
+	//哈希160处理
+	hasher := ripemd160.New()
+	hasher.Write(hash[:])
+	//计算出公钥哈希（锁定output）
+	pubKeyHash := hasher.Sum(nil)
+
+	return pubKeyHash
+}
+
+//GetPubKeyHashFromAddress 通过地址获取公钥哈希
+func GetPubKeyHashFromAddress(address string) []byte {
+
+	//base58解码
+	deInfo := base58.Decode(address)
+
+	if len(deInfo) != 25 {
+		fmt.Println("地址无效")
+		return nil
+	}
+
+	//截取
+	pubKeyHash := deInfo[1 : len(deInfo)-4]
+
+	return pubKeyHash
+}
+
+//CheckSum 获取4字节的校验码
+func CheckSum(payload []byte) []byte {
+	frist := sha256.Sum256(payload)
+	second := sha256.Sum256(frist[:])
+	//4字节校验码
+	checksum := second[0:4]
+	return checksum
 }

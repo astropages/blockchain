@@ -13,7 +13,7 @@ type CLI struct {
 //Usage 使用说明
 const Usage = `
 Usage:
-	create "创建区块链"
+	create <address> "创建区块链"
 	getbalance <address> "获取地址对应的金额"
 	print "打印区块链" 
 	send <from> <to> <amount> <miner> <data> "转账：付款人 收款人 转账金额 矿工 数据"
@@ -27,7 +27,7 @@ func (cli *CLI) Run() {
 	//获取输入参数
 	cmds := os.Args
 	if len(cmds) < 2 {
-		fmt.Println("输入参数错误")
+		fmt.Println("请输入命令参数")
 		fmt.Println(Usage)
 		return
 	}
@@ -36,13 +36,18 @@ func (cli *CLI) Run() {
 	switch cmds[1] {
 	case "create":
 		fmt.Println("创建区块链")
-		cli.createBlockChain()
+		if len(cmds) != 3 {
+			fmt.Println("请输入挖矿地址")
+			return
+		}
+		address := cmds[2]
+		cli.createBlockChain(address)
 	case "print":
 		fmt.Println("打印区块链")
 		cli.printBlockChain()
 	case "getbalance":
 		fmt.Println("获取地址金额")
-		if len(cmds) < 3 {
+		if len(cmds) != 3 {
 			fmt.Println("请输入地址")
 			return
 		}
@@ -50,7 +55,7 @@ func (cli *CLI) Run() {
 		cli.getBalance(address)
 	case "send":
 		fmt.Println("转账")
-		if len(cmds) < 7 {
+		if len(cmds) != 7 {
 			fmt.Println("转账参数错误")
 			return
 		}

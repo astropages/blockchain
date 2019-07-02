@@ -7,9 +7,9 @@ import "fmt"
 */
 
 //创建区块链
-func (cli *CLI) createBlockChain() {
+func (cli *CLI) createBlockChain(address string) {
 	//创建区块链
-	err := CreateBlockChain()
+	err := CreateBlockChain(address)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -24,8 +24,11 @@ func (cli *CLI) getBalance(address string) {
 		fmt.Println(err)
 		return
 	}
+	//获得地址对应的公钥哈希
+	pubKeyHash := GetPubKeyHashFromAddress(address)
+
 	//获取地址的utxo详情
-	utxoInfos := bc.FindMyUTXO(address)
+	utxoInfos := bc.FindMyUTXO(pubKeyHash)
 	//遍历累加金额
 	total := 0.0
 	for _, utxo := range utxoInfos {
