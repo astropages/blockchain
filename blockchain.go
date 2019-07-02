@@ -111,7 +111,16 @@ func GetBlockChainInstance() (*BlockChain, error) {
 }
 
 //AddBlock 向区块链中添加区块的方法（传入数据：交易集合）
-func (bc *BlockChain) AddBlock(txs []*Transaction) error {
+func (bc *BlockChain) AddBlock(txs0 []*Transaction) error {
+	//有效的交易集合
+	txs := []*Transaction{}
+
+	//校验交易签名
+	for _, tx := range txs0 {
+		if bc.VerifyTransaction(tx) {
+			txs = append(txs, tx)
+		}
+	}
 
 	//获取最后一个区块的哈希
 	lastBlockHash := bc.tail
@@ -311,6 +320,31 @@ func (bc *BlockChain) FindTransaction(txid []byte) *Transaction {
 		}
 	}
 	return nil
+}
+
+//VerifyTransaction 交易签名校验
+func (bc *BlockChain) VerifyTransaction(tx *Transaction) bool {
+
+	//挖矿交易不用校验
+	if tx.isCoinBaseTX() {
+		return true
+	}
+
+	//根据TX获取所有需要的prevTXs
+	prevTXs := make(map[string]*Transaction)
+	//遍历账本，找到所有需要的交易集合
+	for _, input := range tx.TXInputs {
+		//该input引用的交易
+		prevTX := bc.FindTransaction(input.TXID) //根据ID获得交易
+		if prevTX == nil {
+			fmt.Println("没有找到有效的引用交易")
+			return false
+		}
+		prevTXs[string(input.TXID)] = prevTX
+	}
+
+	//执行签名
+	return tx.Verify(prevTXs)
 }
 
 /*

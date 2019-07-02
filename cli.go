@@ -19,6 +19,7 @@ Usage:
 	send <from> <to> <amount> <miner> <data> "转账：付款人 收款人 转账金额 矿工 数据"
 	createwallet "创建钱包"
 	listaddress "获取所有钱包地址"
+	printtx "打印区块的所有交易"
 `
 
 //Run 解析用户输入命令的方法
@@ -72,6 +73,10 @@ func (cli *CLI) Run() {
 	case "listaddress":
 		fmt.Println("所有钱包地址")
 		cli.listAddresses()
+
+	case "printtx":
+		fmt.Println("打印区块的所有交易")
+		cli.printTX()
 	default:
 		fmt.Println("输入参数错误")
 	}

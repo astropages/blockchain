@@ -32,10 +32,13 @@ package main
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
+	"math/big"
+	"strings"
 	"time"
 )
 
@@ -261,7 +264,81 @@ func (tx *Transaction) trimmedCopy() *Transaction {
 	return &txCopy
 }
 
-//校验
-//拷贝交易并修改
-//还原签名的数据
-//将input0引用的公钥哈希放到pubKey字段，计算交易哈希，得到付款人签名的原始数据
+//Verify 校验交易签名实际动作
+func (tx *Transaction) Verify(prevTXs map[string]*Transaction) bool {
+
+	//挖矿交易不需要签名
+	if tx.isCoinBaseTX() {
+		return true
+	}
+
+	//获取交易副本，置空pubKey和Sign
+	txCopy := tx.trimmedCopy()
+	//遍历inputs
+	for i, input := range tx.TXInputs {
+		prevTX := prevTXs[string(input.TXID)]
+		if prevTX == nil {
+			return false
+		}
+		//还原数据：得到引用  获取交易哈希值
+		output := prevTX.TXOutputs[input.Index]
+		txCopy.TXInputs[i].PubKey = output.ScriptPubKeyHash
+		txCopy.setHash() //计算交易哈希
+
+		//将input的pubKey字段置空
+		txCopy.TXInputs[i].PubKey = nil
+
+		hashData := txCopy.TXID       //要还原的签名的数据
+		signature := input.ScriptSign //签名
+		pubKey := input.PubKey        //公钥字节流
+
+		//开始校验
+		var r, s, x, y big.Int
+
+		//把r和s从签名中截取出来
+		r.SetBytes(signature[:len(signature)/2])
+		s.SetBytes(signature[len(signature)/2:])
+
+		//把x和y从pubKey中截取出来，还原公钥本身
+		x.SetBytes(pubKey[:len(pubKey)/2])
+		y.SetBytes(pubKey[len(pubKey)/2:])
+
+		curve := elliptic.P256()
+		publicKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
+
+		//校验
+		res := ecdsa.Verify(&publicKey, hashData, &r, &s)
+		if !res {
+			fmt.Println("签名校验失败")
+			return false
+		}
+
+	}
+
+	fmt.Println("签名校验成功")
+	return true
+}
+
+//String方法
+func (tx *Transaction) String() string {
+	var lines []string
+
+	lines = append(lines, fmt.Sprintf("Transaction %x:", tx.TXID))
+
+	for i, input := range tx.TXInputs {
+
+		lines = append(lines, fmt.Sprintf("Input %d:", i))
+		lines = append(lines, fmt.Sprintf("TXID: %x", input.TXID))
+		lines = append(lines, fmt.Sprintf("Out: %d", input.Index))
+		lines = append(lines, fmt.Sprintf("Signature: %x", input.ScriptSign))
+		lines = append(lines, fmt.Sprintf("PubKey: %x", input.PubKey))
+	}
+
+	for i, output := range tx.TXOutputs {
+		lines = append(lines, fmt.Sprintf("Output %d:", i))
+		lines = append(lines, fmt.Sprintf("Value: %f", output.Value))
+		lines = append(lines, fmt.Sprintf("Script: %x", output.ScriptPubKeyHash))
+	}
+
+	return strings.Join(lines, "\n")
+}

@@ -157,3 +157,29 @@ func (cli *CLI) listAddresses() {
 		fmt.Println(address)
 	}
 }
+
+//打印区块的所有交易
+func (cli *CLI) printTX() {
+	//获取一个区块链实例
+	bc, err := GetBlockChainInstance()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer bc.db.Close()
+
+	it := bc.NewIterator()
+
+	for {
+		block := it.Next()
+		fmt.Println("==============================")
+
+		for _, tx := range block.Transactions {
+			//直接打印交易：在Transaction中实现String方法
+			fmt.Println(tx)
+		}
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
+}
