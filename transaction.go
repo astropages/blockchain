@@ -31,6 +31,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
@@ -121,7 +123,7 @@ func NewTransaction(from string, to string, amount float64, bc *BlockChain) *Tra
 		fmt.Println("未找到付款人地址对应的私钥")
 		return nil
 	}
-	//priKey := wallet.PrivateKey //签名使用
+	priKey := wallet.PrivateKey                      //签名使用
 	pubKey := wallet.PublicKey                       //获得公钥
 	pubKeyHash := GetPubKeyHashFromPublicKey(pubKey) //获得公钥哈希
 
@@ -169,6 +171,13 @@ func NewTransaction(from string, to string, amount float64, bc *BlockChain) *Tra
 	//计算哈希值，返回
 	tx := Transaction{nil, inputs, outputs, uint64(timeStamp)}
 	tx.setHash()
+
+	//交易签名
+	if !bc.SignTransaction(&tx, priKey) {
+		fmt.Println("交易签名失败")
+		return nil
+	}
+
 	return &tx
 }
 
@@ -181,3 +190,78 @@ func (tx *Transaction) isCoinBaseTX() bool {
 	}
 	return false
 }
+
+//Sign 实际签名动作(私钥，inputs所引用的output所在交易的集合：key:交易ID,value:交易本身)
+func (tx *Transaction) Sign(priKey *ecdsa.PrivateKey, prevTXs map[string]*Transaction) bool {
+
+	//挖矿交易不需要签名
+	if tx.isCoinBaseTX() {
+		return true
+	}
+
+	//获取交易副本，置空pubKey和Sign
+	txCopy := tx.trimmedCopy()
+	//遍历inputs
+	for i, input := range txCopy.TXInputs {
+		prevTX := prevTXs[string(input.TXID)]
+		if prevTX == nil {
+			return false
+		}
+		//input引用的output
+		output := prevTX.TXOutputs[input.Index]
+		//获取引用的output公钥哈希
+		txCopy.TXInputs[i].PubKey = output.ScriptPubKeyHash
+		//对交易副本进行签名
+		txCopy.setHash() //计算交易哈希
+
+		//将input的pubKey字段置空
+		txCopy.TXInputs[i].PubKey = nil //还原数据，防止干扰后面的input签名
+
+		hashData := txCopy.TXID //要签名的数据
+		//签名
+		r, s, err := ecdsa.Sign(rand.Reader, priKey, hashData)
+		if err != nil {
+			fmt.Println("签名失败")
+			return false
+		}
+		signature := append(r.Bytes(), s.Bytes()...)
+		//将数字签名赋值给原始交易
+		tx.TXInputs[i].ScriptSign = signature
+	}
+
+	fmt.Println("交易签名成功")
+	return true
+}
+
+//创建一个交易副本：每个input的pubKey和Sign都置空
+func (tx *Transaction) trimmedCopy() *Transaction {
+	var inputs []TXInput
+	var outputs []TXOutput
+
+	//每个input的pubKey和Sign都置空
+	for _, input := range tx.TXInputs {
+		input := TXInput{
+			TXID:       input.TXID,
+			Index:      input.Index,
+			ScriptSign: nil,
+			PubKey:     nil,
+		}
+		inputs = append(inputs, input)
+	}
+
+	outputs = tx.TXOutputs
+
+	txCopy := Transaction{
+		tx.TXID,
+		inputs,
+		outputs,
+		tx.TimeStamp,
+	}
+
+	return &txCopy
+}
+
+//校验
+//拷贝交易并修改
+//还原签名的数据
+//将input0引用的公钥哈希放到pubKey字段，计算交易哈希，得到付款人签名的原始数据

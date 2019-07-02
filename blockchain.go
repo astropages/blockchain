@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 
@@ -269,6 +270,47 @@ func (bc *BlockChain) findNeedUTXO(pubKeyHash []byte, amount float64) (map[strin
 	}
 
 	return retMap, retValue
+}
+
+//SignTransaction 签名函数
+func (bc *BlockChain) SignTransaction(tx *Transaction, priKey *ecdsa.PrivateKey) bool {
+	//根据TX获取所有需要的prevTXs
+	prevTXs := make(map[string]*Transaction)
+	//遍历账本，找到所有需要的交易集合
+	for _, input := range tx.TXInputs {
+		//该input引用的交易
+		prevTX := bc.FindTransaction(input.TXID) //根据ID获得交易
+		if prevTX == nil {
+			fmt.Println("没有找到有效的引用交易")
+			return false
+		}
+		prevTXs[string(input.TXID)] = prevTX
+	}
+
+	//执行签名
+	return tx.Sign(priKey, prevTXs)
+
+}
+
+//FindTransaction 根据交易ID获取交易
+func (bc *BlockChain) FindTransaction(txid []byte) *Transaction {
+	//遍历区块和账本，比较txid和交易ID，如果相同则返回交易，否则返回nil
+
+	it := bc.NewIterator() //迭代器
+
+	for {
+		block := it.Next()
+		for _, tx := range block.Transactions {
+			//判断当前交易ID和要查找的ID是否相同
+			if bytes.Equal(tx.TXID, txid) {
+				return tx
+			}
+		}
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
+	return nil
 }
 
 /*
