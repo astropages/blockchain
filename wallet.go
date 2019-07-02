@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -97,4 +98,22 @@ func CheckSum(payload []byte) []byte {
 	//4字节校验码
 	checksum := second[0:4]
 	return checksum
+}
+
+//IsValidAddress 地址校验：判断地址是否有效
+func IsValidAddress(address string) bool {
+	//解码，得到25字节数据
+	deInfo := base58.Decode(address)
+	if len(deInfo) != 25 {
+		fmt.Println("地址校验失败")
+		return false
+	}
+	//截取前21字节的payload
+	payload := deInfo[:len(deInfo)-4]
+	//截取后4字节的checksum1
+	checksum1 := deInfo[len(deInfo)-4:]
+	//计算payload, 获得checksum2
+	checksum2 := CheckSum(payload)
+	//对比checksum1和checksum2
+	return bytes.Equal(checksum1, checksum2)
 }

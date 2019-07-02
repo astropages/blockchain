@@ -8,6 +8,11 @@ import "fmt"
 
 //创建区块链
 func (cli *CLI) createBlockChain(address string) {
+	if !IsValidAddress(address) {
+		fmt.Println("传入地址无效")
+		return
+	}
+
 	//创建区块链
 	err := CreateBlockChain(address)
 	if err != nil {
@@ -18,6 +23,11 @@ func (cli *CLI) createBlockChain(address string) {
 
 //获取地址对应的金额
 func (cli *CLI) getBalance(address string) {
+	if !IsValidAddress(address) {
+		fmt.Println("传入地址无效")
+		return
+	}
+
 	//获取一个区块链实例
 	bc, err := GetBlockChainInstance()
 	if err != nil {
@@ -76,6 +86,19 @@ func (cli *CLI) printBlockChain() {
 
 //转账：每次转账时便添加一个区块
 func (cli *CLI) send(from string, to string, amount float64, miner string, data string) {
+	if !IsValidAddress(from) {
+		fmt.Println("传入from地址无效")
+		return
+	}
+	if !IsValidAddress(to) {
+		fmt.Println("传入to地址无效")
+		return
+	}
+	if !IsValidAddress(miner) {
+		fmt.Println("传入miner地址无效")
+		return
+	}
+
 	//获取一个区块链实例
 	bc, err := GetBlockChainInstance()
 	if err != nil {
